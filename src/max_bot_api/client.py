@@ -15,6 +15,7 @@ from typing import Literal
 import httpx
 
 from max_bot_api.models.attachments import Attachment
+from max_bot_api.models.chats import Chat
 from max_bot_api.models.messages import (
     Message,
     NewMessageBody,
@@ -190,6 +191,14 @@ class MaxClient:
 
         return await self._transport.request(
             "GET", "/updates", params=params, response_model=UpdateList
+        )
+
+    # ── Chats ───────────────────────────────────────────────────────────
+
+    async def get_chat(self, chat_id: int) -> Chat:
+        """Fetch metadata for a single chat by ID."""
+        return await self._transport.request(
+            "GET", f"/chats/{chat_id}", response_model=Chat
         )
 
     # ── Internal helpers ────────────────────────────────────────────────
