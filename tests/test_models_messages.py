@@ -1,8 +1,9 @@
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from max_bot_api.models.messages import (
     Message,
+    MessageBody,
     MessageRecipient,
     MessageSender,
     MessageStat,
@@ -68,9 +69,9 @@ def test_message_round_trip() -> None:
     assert msg.body.mid == "m1"
     assert msg.body.text == "hi"
     assert msg.recipient.chat_id == 42
-    # Round-trip preserves the structure
+    # Real round-trip: dump → re-validate → equal model
     dumped = msg.model_dump(by_alias=True, exclude_none=False)
-    assert dumped["body"]["mid"] == "m1"
+    assert Message.model_validate(dumped) == msg
 
 
 def test_message_ignores_unknown_response_fields() -> None:
@@ -91,3 +92,23 @@ def test_message_ignores_unknown_response_fields() -> None:
 def test_message_stat() -> None:
     stat = MessageStat(views=100)
     assert stat.views == 100
+
+
+@pytest.mark.parametrize(
+    ("model_cls", "valid_payload"),
+    [
+        (MessageSender, {"user_id": 1, "name": "Alice"}),
+        (MessageRecipient, {"chat_id": 42, "chat_type": "chat"}),
+        (MessageBody, {"mid": "m1", "seq": 1, "attachments": []}),
+        (MessageStat, {"views": 100}),
+    ],
+)
+def test_response_models_ignore_unknown_fields(
+    model_cls: type[BaseModel], valid_payload: dict[str, object]
+) -> None:
+    """Each response model must accept (and silently drop) unknown fields
+    the server adds in future API revisions."""
+    payload = {**valid_payload, "future_field": "should be ignored"}
+    instance = model_cls.model_validate(payload)
+    # Re-dump and confirm the unknown field is gone
+    assert "future_field" not in instance.model_dump()
