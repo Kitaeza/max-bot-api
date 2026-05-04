@@ -6,6 +6,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-04
+
+### Added
+- `RetryPolicy` (frozen dataclass) for opt-in request retries. Pass via
+  `MaxClient(token, retry=RetryPolicy(...))`. Default behavior is
+  unchanged — no `retry=` argument means one attempt per call, identical
+  to v0.1.
+- Retry semantics: read methods (`get_messages`, `get_updates`,
+  `get_chat`, `request_upload_url`) retry on `MaxServerError` /
+  `MaxRateLimitError` / `MaxTransportError`. Write methods
+  (`send_message`, `edit_message`, `delete_message`, the upload POST)
+  only retry on `MaxTransportError` — a 5xx during a write may have
+  succeeded server-side and a blind retry would double-apply.
+- 429 responses honor `Retry-After`; the header is never clamped by
+  `backoff_max`.
+
 ## [0.1.0] - 2026-05-04
 
 ### Added
@@ -27,5 +43,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Full type coverage with `py.typed` marker.
 - MIT license, hatchling build, ruff + mypy --strict in CI.
 
-[Unreleased]: https://github.com/Kitaeza/python-max-bot/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Kitaeza/python-max-bot/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Kitaeza/python-max-bot/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Kitaeza/python-max-bot/releases/tag/v0.1.0

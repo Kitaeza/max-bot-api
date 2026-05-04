@@ -49,7 +49,7 @@ asyncio.run(main())
 | Chat metadata (`get_chat`) | ✅ |
 | HTML and Markdown formatting | ✅ |
 | Typed exceptions per HTTP status | ✅ |
-| Auto-retry / backoff | ⏳ v0.2 |
+| Auto-retry / backoff | ✅ |
 | Webhook subscription endpoints | ⏳ v0.3+ |
 | Bot framework (handlers, FSM) | ❌ out of scope |
 
@@ -75,6 +75,26 @@ async with MaxClient(token=...) as client:
         # Network problem; retry your way
         ...
 ```
+
+## Retries
+
+Retries are opt-in. Pass a `RetryPolicy` to the client constructor:
+
+```python
+from max_bot_api import MaxClient, RetryPolicy
+
+async with MaxClient(token, retry=RetryPolicy()) as client:
+    await client.get_chat(42)               # retries on 5xx and transport errors
+    await client.send_message(chat_id=42, text="hi")  # only retries on transport errors
+```
+
+The default policy: 3 attempts, exponential backoff (1s, 2s, 4s with ±25% jitter), capped at 30s per wait. Tune via `RetryPolicy(max_attempts=..., backoff_initial=..., backoff_multiplier=..., backoff_max=..., jitter=...)`.
+
+Read methods (`get_messages`, `get_updates`, `get_chat`, `request_upload_url`) retry on both transport errors and 5xx responses. Write methods (`send_message`, `edit_message`, `delete_message`, the upload POST) only retry on transport errors — a 5xx during a write could mean the server processed it, so blind retry could double-apply.
+
+429 responses always retry. The library waits at least as long as the server's `Retry-After` header asks; `backoff_max` does **not** clamp the server's instruction.
+
+Without `retry=`, behavior is identical to v0.1 — one attempt per call.
 
 ## Built with Claude
 

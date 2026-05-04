@@ -35,8 +35,11 @@ scope. Plan: `docs/plans/0001-v0.1-implementation.md`.
   `ValueError` before any network call.
 - **Auth header is bare** — `Authorization: <token>`, no `Bearer`
   prefix. Confirmed in the Max docs; do not "fix" it.
-- **No retries in v0.1.** That's a v0.2 feature behind `RetryPolicy`.
-  Don't sneak retry logic into transport.
+- **Retries are opt-in via `RetryPolicy`** (added in v0.2). `MaxClient`
+  with no `retry=` argument behaves exactly like v0.1 — single attempt
+  per call. The retry loop lives in `transport.py`; each `MaxClient`
+  method tells the transport whether the call is `idempotent=` so writes
+  don't double-apply on 5xx.
 
 ## Testing
 
