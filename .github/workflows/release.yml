@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write   # to create the GitHub Release
+  id-token: write   # for PyPI trusted publishing (OIDC)
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/max-bot-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v3
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Sanity-check (lint + typecheck + test)
+        run: |
+          uv run ruff check
+          uv run mypy src tests
+          uv run pytest
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Extract the section for this version from CHANGELOG.md
+          awk "/^## \[${TAG#v}\]/,/^## \[/" CHANGELOG.md \
+            | sed '$d' \
+            | tail -n +2 > /tmp/release-notes.md
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file /tmp/release-notes.md \
+            dist/*
