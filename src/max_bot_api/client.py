@@ -14,7 +14,13 @@ from typing import BinaryIO, Literal
 
 import httpx
 
-from max_bot_api.models.attachments import Attachment
+from max_bot_api.models.attachments import (
+    Attachment,
+    AudioAttachment,
+    FileAttachment,
+    ImageAttachment,
+    VideoAttachment,
+)
 from max_bot_api.models.chats import Chat
 from max_bot_api.models.messages import (
     Message,
@@ -242,6 +248,62 @@ class MaxClient:
             response = await upload_client.post(upload_url, files=files)
             response.raise_for_status()
             return UploadResult.model_validate(response.json())
+
+    async def upload_image(
+        self,
+        content: bytes | BinaryIO,
+        *,
+        filename: str | None = None,
+    ) -> ImageAttachment:
+        """One-call helper: request URL, upload bytes, return ImageAttachment."""
+        endpoint = await self.request_upload_url(type="image")
+        result = await self.upload_file(
+            endpoint.url, content, filename=filename, content_type="image/jpeg"
+        )
+        return ImageAttachment.model_validate({"payload": {"token": result.token}})
+
+    async def upload_video(
+        self,
+        content: bytes | BinaryIO,
+        *,
+        filename: str | None = None,
+    ) -> VideoAttachment:
+        """One-call helper: request URL, upload bytes, return VideoAttachment."""
+        endpoint = await self.request_upload_url(type="video")
+        result = await self.upload_file(
+            endpoint.url, content, filename=filename, content_type="video/mp4"
+        )
+        return VideoAttachment.model_validate({"payload": {"token": result.token}})
+
+    async def upload_audio(
+        self,
+        content: bytes | BinaryIO,
+        *,
+        filename: str | None = None,
+    ) -> AudioAttachment:
+        """One-call helper: request URL, upload bytes, return AudioAttachment."""
+        endpoint = await self.request_upload_url(type="audio")
+        result = await self.upload_file(
+            endpoint.url, content, filename=filename, content_type="audio/mpeg"
+        )
+        return AudioAttachment.model_validate({"payload": {"token": result.token}})
+
+    async def upload_file_attachment(
+        self,
+        content: bytes | BinaryIO,
+        *,
+        filename: str | None = None,
+        content_type: str | None = None,
+    ) -> FileAttachment:
+        """One-call helper for arbitrary files."""
+        endpoint = await self.request_upload_url(type="file")
+        result = await self.upload_file(
+            endpoint.url,
+            content,
+            filename=filename,
+            content_type=content_type or "application/octet-stream",
+        )
+        return FileAttachment.model_validate({"payload": {"token": result.token}})
 
     # ── Internal helpers ────────────────────────────────────────────────
 
