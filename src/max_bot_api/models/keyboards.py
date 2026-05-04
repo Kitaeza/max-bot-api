@@ -75,7 +75,9 @@ class InlineKeyboard(BaseModel):
     def _enforce_limits(cls, v: list[list[Button]]) -> list[list[Button]]:
         if len(v) > 30:
             raise ValueError("inline_keyboard: at most 30 rows allowed")
-        for row in v:
+        for i, row in enumerate(v):
+            if len(row) == 0:
+                raise ValueError(f"inline_keyboard: row {i} is empty")
             if len(row) > 7:
                 raise ValueError("inline_keyboard: at most 7 buttons per row")
         return v

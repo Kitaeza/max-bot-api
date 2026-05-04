@@ -2,6 +2,14 @@
 
 All attachments share `{type, payload}`. The `type` field is the
 discriminator; each subtype declares its own payload shape.
+
+Variants use `extra="ignore"` so server-added fields don't break
+parsing. The same models are also used inside `NewMessageBody` (a
+request), where this means typos in attachment payload field names
+are silently dropped instead of raising. We accept this asymmetry to
+avoid duplicating every variant into request/response pairs — payload
+field names are a small surface and stable. If this becomes a real
+debugging burden, split the variants.
 """
 
 from __future__ import annotations

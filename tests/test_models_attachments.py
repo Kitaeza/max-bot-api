@@ -90,3 +90,15 @@ def test_inline_keyboard_validates_button_count() -> None:
     ]
     with pytest.raises(ValidationError):
         InlineKeyboard(buttons=too_many_rows)
+
+
+def test_inline_keyboard_rejects_empty_row() -> None:
+    """A keyboard with an empty row is junk data; reject locally."""
+    with pytest.raises(ValidationError, match="row 0 is empty"):
+        InlineKeyboard(buttons=[[]])
+
+
+def test_inline_keyboard_allows_zero_rows() -> None:
+    """Zero rows is legitimate (programmatic construction may yield it)."""
+    kb = InlineKeyboard(buttons=[])
+    assert kb.buttons == []
