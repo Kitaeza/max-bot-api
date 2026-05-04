@@ -87,6 +87,20 @@ class MaxTimeoutError(MaxTransportError):
     """The HTTP request timed out before a response was received."""
 
 
+class MaxBadResponseError(MaxError):
+    """The API returned 2xx with `{success: false}` in the body.
+
+    Synthesized from the response body — does not carry an
+    httpx.Response, since the underlying HTTP call succeeded. Raised
+    from subscribe / unsubscribe / send_action when the server reports
+    a soft failure on an otherwise-successful HTTP response.
+    """
+
+    def __init__(self, message: str | None) -> None:
+        super().__init__(message or "API reported success=false with no message")
+        self.message = message
+
+
 _STATUS_MAP: dict[int, type[MaxAPIError]] = {
     400: MaxValidationError,
     401: MaxAuthError,

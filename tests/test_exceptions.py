@@ -4,6 +4,7 @@ import pytest
 from max_bot_api.exceptions import (
     MaxAPIError,
     MaxAuthError,
+    MaxBadResponseError,
     MaxError,
     MaxMethodNotAllowedError,
     MaxNotFoundError,
@@ -91,3 +92,22 @@ def test_unmapped_4xx_falls_back_to_max_api_error() -> None:
         raise_for_response(response)
     # 418 has no specific subclass — check it's the base, not one of the named subclasses
     assert type(info.value) is MaxAPIError
+
+
+def test_bad_response_error_is_max_error_not_api_error() -> None:
+    """The HTTP call was 2xx, so it's not an HTTP-level error and there is
+    no httpx.Response to carry. It is, however, raised by the library."""
+    assert issubclass(MaxBadResponseError, MaxError)
+    assert not issubclass(MaxBadResponseError, MaxAPIError)
+
+
+def test_bad_response_error_carries_message() -> None:
+    err = MaxBadResponseError("subscription URL unreachable")
+    assert err.message == "subscription URL unreachable"
+    assert "subscription URL unreachable" in str(err)
+
+
+def test_bad_response_error_handles_missing_message() -> None:
+    err = MaxBadResponseError(None)
+    assert err.message is None
+    assert "success=false" in str(err)
