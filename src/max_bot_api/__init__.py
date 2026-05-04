@@ -52,6 +52,7 @@ from max_bot_api.models import (
     UploadResult,
     VideoAttachment,
 )
+from max_bot_api.retry import RetryPolicy
 
 __all__ = [
     "Attachment",
@@ -96,6 +97,7 @@ __all__ = [
     "OpenAppButton",
     "RequestContactButton",
     "RequestGeoLocationButton",
+    "RetryPolicy",
     "TextFormat",
     "UploadEndpoint",
     "UploadResult",
