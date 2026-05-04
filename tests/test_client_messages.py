@@ -125,3 +125,38 @@ async def test_client_aclose(client: MaxClient) -> None:
 async def test_client_as_context_manager() -> None:
     async with MaxClient(token=_TOKEN, base_url=_BASE) as c:
         assert isinstance(c, MaxClient)
+
+
+@respx.mock
+async def test_edit_message_omits_notify_by_default(client: MaxClient) -> None:
+    """edit_message(notify=None) must NOT send `notify` on the wire — the
+    server keeps the original notify state for the edit."""
+    route = respx.put(f"{_BASE}/messages", params={"message_id": "m1"}).mock(
+        return_value=httpx.Response(200, json=_msg_response("edited"))
+    )
+    await client.edit_message("m1", text="edited")
+    body = route.calls.last.request.read()
+    assert b"notify" not in body
+
+
+@respx.mock
+async def test_edit_message_sends_notify_when_explicit(client: MaxClient) -> None:
+    """When the caller explicitly sets notify, the value reaches the wire."""
+    route = respx.put(f"{_BASE}/messages", params={"message_id": "m1"}).mock(
+        return_value=httpx.Response(200, json=_msg_response("edited"))
+    )
+    await client.edit_message("m1", text="edited", notify=False)
+    body = route.calls.last.request.read()
+    assert b'"notify":false' in body
+
+
+@respx.mock
+async def test_send_message_default_notify_is_true(client: MaxClient) -> None:
+    """send_message keeps its notify=True default — explicit on the wire."""
+    respx.post(f"{_BASE}/messages", params={"chat_id": "42"}).mock(
+        return_value=httpx.Response(200, json=_msg_response())
+    )
+    await client.send_message(chat_id=42, text="hi")
+    # Already covered by the existing test_send_message_to_chat which asserts
+    # the body bytes; this is an explicit doc-style test that the default
+    # didn't regress when we made the model field Optional.

@@ -122,7 +122,7 @@ class MaxClient:
             text=text,
             attachments=attachments,
             link=link,
-            notify=notify if notify is not None else True,
+            notify=notify,
             format=TextFormat(format) if isinstance(format, str) else format,
         )
         return await self._transport.request(

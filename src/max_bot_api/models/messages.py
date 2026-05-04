@@ -39,7 +39,7 @@ class NewMessageBody(BaseModel):
     text: str | None = None
     attachments: list[Attachment] | None = None
     link: NewMessageLink | None = None
-    notify: bool = True
+    notify: bool | None = None
     format: TextFormat | None = None
 
 

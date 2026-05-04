@@ -25,14 +25,15 @@ def test_text_format_values() -> None:
 def test_new_message_body_minimal() -> None:
     body = NewMessageBody(text="hi")
     assert body.text == "hi"
-    assert body.notify is True
+    assert body.notify is None  # None means "omit from wire" — server defaults to true
     assert body.format is None
 
 
 def test_new_message_body_dump_drops_unset_optional_fields() -> None:
     body = NewMessageBody(text="hi")
     dumped = body.model_dump(exclude_none=True, by_alias=True)
-    assert dumped == {"text": "hi", "notify": True}
+    # notify=None is excluded; the server-side default of true applies
+    assert dumped == {"text": "hi"}
 
 
 def test_new_message_body_with_format_serializes_value() -> None:
