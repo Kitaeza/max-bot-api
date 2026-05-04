@@ -11,9 +11,10 @@ parsing.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict
+
+from max_bot_api.models.attachments import Attachment
 
 
 class TextFormat(str, Enum):
@@ -36,7 +37,7 @@ class NewMessageBody(BaseModel):
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
     text: str | None = None
-    attachments: list[dict[str, Any]] | None = None
+    attachments: list[Attachment] | None = None
     link: NewMessageLink | None = None
     notify: bool = True
     format: TextFormat | None = None
@@ -68,7 +69,7 @@ class MessageBody(BaseModel):
     mid: str
     seq: int
     text: str | None = None
-    attachments: list[dict[str, Any]] = []
+    attachments: list[Attachment] = []
 
 
 class MessageStat(BaseModel):
