@@ -21,6 +21,7 @@ from max_bot_api.models.messages import (
     NewMessageLink,
     TextFormat,
 )
+from max_bot_api.models.updates import UpdateList, UpdateType
 from max_bot_api.transport import Transport
 
 _TEXT_MAX = 4000
@@ -160,6 +161,36 @@ class MaxClient:
 
         result = await self._transport.request("GET", "/messages", params=params)
         return [Message.model_validate(m) for m in result.get("messages", [])]
+
+    # ── Updates ─────────────────────────────────────────────────────────
+
+    async def get_updates(
+        self,
+        *,
+        limit: int = 100,
+        timeout: int = 30,
+        marker: int | None = None,
+        types: list[UpdateType] | None = None,
+    ) -> UpdateList:
+        """Long-poll for updates.
+
+        `timeout` is the long-poll wait in seconds — the request blocks
+        server-side until an update arrives or the timeout elapses.
+        Pass back the returned `marker` on the next call to advance the
+        cursor.
+        """
+        params: dict[str, object] = {
+            "limit": limit,
+            "timeout": timeout,
+            "marker": marker,
+        }
+        if types:
+            # httpx encodes list values as repeated query params (?types=a&types=b)
+            params["types"] = [t.value for t in types]
+
+        return await self._transport.request(
+            "GET", "/updates", params=params, response_model=UpdateList
+        )
 
     # ── Internal helpers ────────────────────────────────────────────────
 
