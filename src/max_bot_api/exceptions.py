@@ -67,9 +67,7 @@ class MaxRateLimitError(MaxAPIError):
         response: httpx.Response,
         retry_after: float | None,
     ) -> None:
-        super().__init__(
-            status_code=status_code, code=code, message=message, response=response
-        )
+        super().__init__(status_code=status_code, code=code, message=message, response=response)
         self.retry_after = retry_after
 
 

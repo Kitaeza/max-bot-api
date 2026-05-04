@@ -56,8 +56,11 @@ def test_new_message_link_minimal() -> None:
 def test_message_round_trip() -> None:
     payload = {
         "sender": {
-            "user_id": 1, "name": "Alice", "username": "alice",
-            "is_bot": False, "last_activity_time": 0
+            "user_id": 1,
+            "name": "Alice",
+            "username": "alice",
+            "is_bot": False,
+            "last_activity_time": 0,
         },
         "recipient": {"chat_id": 42, "chat_type": "chat", "user_id": None},
         "timestamp": 1234567890,
@@ -78,8 +81,11 @@ def test_message_round_trip() -> None:
 def test_message_ignores_unknown_response_fields() -> None:
     payload = {
         "sender": {
-            "user_id": 1, "name": "Alice", "username": "alice",
-            "is_bot": False, "last_activity_time": 0
+            "user_id": 1,
+            "name": "Alice",
+            "username": "alice",
+            "is_bot": False,
+            "last_activity_time": 0,
         },
         "recipient": {"chat_id": 42, "chat_type": "chat", "user_id": None},
         "timestamp": 1234567890,

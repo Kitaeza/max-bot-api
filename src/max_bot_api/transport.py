@@ -97,14 +97,10 @@ class Transport:
             MaxTransportError on network failures
             MaxTimeoutError on timeouts
         """
-        cleaned_params = (
-            {k: v for k, v in params.items() if v is not None} if params else None
-        )
+        cleaned_params = {k: v for k, v in params.items() if v is not None} if params else None
 
         try:
-            response = await self._client.request(
-                method, path, params=cleaned_params, json=json
-            )
+            response = await self._client.request(method, path, params=cleaned_params, json=json)
         except httpx.TimeoutException as exc:
             raise MaxTimeoutError(str(exc)) from exc
         except httpx.TransportError as exc:

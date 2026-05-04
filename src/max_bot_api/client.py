@@ -144,9 +144,7 @@ class MaxClient:
 
     async def delete_message(self, message_id: str) -> None:
         """Delete a message by its mid."""
-        await self._transport.request(
-            "DELETE", "/messages", params={"message_id": message_id}
-        )
+        await self._transport.request("DELETE", "/messages", params={"message_id": message_id})
 
     async def get_messages(
         self,
@@ -204,9 +202,7 @@ class MaxClient:
 
     async def get_chat(self, chat_id: int) -> Chat:
         """Fetch metadata for a single chat by ID."""
-        return await self._transport.request(
-            "GET", f"/chats/{chat_id}", response_model=Chat
-        )
+        return await self._transport.request("GET", f"/chats/{chat_id}", response_model=Chat)
 
     # ── Uploads ─────────────────────────────────────────────────────────
 
@@ -330,8 +326,6 @@ class MaxClient:
             raise ValueError("provide chat_id or user_id, not both")
 
     @staticmethod
-    def _require_content(
-        text: str | None, attachments: list[Attachment] | None
-    ) -> None:
+    def _require_content(text: str | None, attachments: list[Attachment] | None) -> None:
         if not text and not attachments:
             raise ValueError("must provide text or attachments")
