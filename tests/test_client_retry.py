@@ -129,3 +129,34 @@ async def test_no_policy_means_no_retry_on_get_chat(no_sleep: None) -> None:
         with pytest.raises(MaxServiceUnavailableError):
             await client.get_chat(42)
     assert route.call_count == 1
+
+
+@respx.mock
+async def test_get_me_retries_on_5xx(policy: RetryPolicy, no_sleep: None) -> None:
+    """Idempotency wiring for get_me — must retry on 5xx."""
+    body = {
+        "user_id": 1,
+        "first_name": "TestBot",
+        "is_bot": True,
+        "last_activity_time": 0,
+    }
+    route = respx.get(f"{_BASE}/me").mock(
+        side_effect=[
+            httpx.Response(503, json={}),
+            httpx.Response(200, json=body),
+        ]
+    )
+    async with MaxClient(_TOKEN, base_url=_BASE, retry=policy) as client:
+        me = await client.get_me()
+    assert me.user_id == 1
+    assert route.call_count == 2
+
+
+@respx.mock
+async def test_subscribe_does_not_retry_on_5xx(policy: RetryPolicy, no_sleep: None) -> None:
+    """Idempotency wiring for subscribe — must NOT retry on 5xx."""
+    route = respx.post(f"{_BASE}/subscriptions").mock(return_value=httpx.Response(503, json={}))
+    async with MaxClient(_TOKEN, base_url=_BASE, retry=policy) as client:
+        with pytest.raises(MaxServiceUnavailableError):
+            await client.subscribe(url="https://example.com/wh")
+    assert route.call_count == 1

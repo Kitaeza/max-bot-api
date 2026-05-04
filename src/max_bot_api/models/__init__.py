@@ -14,7 +14,15 @@ from max_bot_api.models.attachments import (
     InlineKeyboardAttachment,
     VideoAttachment,
 )
-from max_bot_api.models.chats import Chat, ChatType
+from max_bot_api.models.bot import BotCommand, BotInfo
+from max_bot_api.models.chats import (
+    Chat,
+    ChatAction,
+    ChatAdminPermission,
+    ChatMember,
+    ChatMemberList,
+    ChatType,
+)
 from max_bot_api.models.keyboards import (
     Button,
     CallbackButton,
@@ -36,6 +44,7 @@ from max_bot_api.models.messages import (
     NewMessageLink,
     TextFormat,
 )
+from max_bot_api.models.subscriptions import Subscription
 from max_bot_api.models.updates import (
     BotAddedUpdate,
     BotRemovedUpdate,
@@ -54,11 +63,17 @@ __all__ = [
     "AttachmentType",
     "AudioAttachment",
     "BotAddedUpdate",
+    "BotCommand",
+    "BotInfo",
     "BotRemovedUpdate",
     "BotStartedUpdate",
     "Button",
     "CallbackButton",
     "Chat",
+    "ChatAction",
+    "ChatAdminPermission",
+    "ChatMember",
+    "ChatMemberList",
     "ChatType",
     "ClipboardButton",
     "FileAttachment",
@@ -80,6 +95,7 @@ __all__ = [
     "OpenAppButton",
     "RequestContactButton",
     "RequestGeoLocationButton",
+    "Subscription",
     "TextFormat",
     "UploadEndpoint",
     "UploadResult",
