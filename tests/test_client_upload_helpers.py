@@ -51,3 +51,27 @@ async def test_upload_file_attachment() -> None:
     async with MaxClient(token="t", base_url=_BASE) as c:
         att = await c.upload_file_attachment(b"file-bytes", filename="doc.pdf")
     assert isinstance(att, FileAttachment)
+
+
+@respx.mock
+async def test_upload_image_default_content_type_omitted() -> None:
+    """No explicit content_type → upload_file uses application/octet-stream
+    fallback (the upload host then sniffs from bytes)."""
+    _mock_upload("image")
+    async with MaxClient(token="t", base_url=_BASE) as c:
+        await c.upload_image(b"png-bytes", filename="pic.png")
+    # The actual upload request body should have application/octet-stream
+    upload_request = respx.calls.last.request
+    body = upload_request.read()
+    assert b"application/octet-stream" in body
+
+
+@respx.mock
+async def test_upload_image_explicit_content_type() -> None:
+    """Explicit content_type flows through to the upload request."""
+    _mock_upload("image")
+    async with MaxClient(token="t", base_url=_BASE) as c:
+        await c.upload_image(b"png-bytes", filename="pic.png", content_type="image/png")
+    upload_request = respx.calls.last.request
+    body = upload_request.read()
+    assert b"image/png" in body

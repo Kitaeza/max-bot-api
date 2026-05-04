@@ -254,11 +254,16 @@ class MaxClient:
         content: bytes | BinaryIO,
         *,
         filename: str | None = None,
+        content_type: str | None = None,
     ) -> ImageAttachment:
-        """One-call helper: request URL, upload bytes, return ImageAttachment."""
+        """One-call helper: request URL, upload bytes, return ImageAttachment.
+
+        content_type defaults to None — the upload host infers from bytes.
+        Pass explicitly (e.g. "image/png") if the host requires it.
+        """
         endpoint = await self.request_upload_url(type="image")
         result = await self.upload_file(
-            endpoint.url, content, filename=filename, content_type="image/jpeg"
+            endpoint.url, content, filename=filename, content_type=content_type
         )
         return ImageAttachment.model_validate({"payload": {"token": result.token}})
 
@@ -267,11 +272,16 @@ class MaxClient:
         content: bytes | BinaryIO,
         *,
         filename: str | None = None,
+        content_type: str | None = None,
     ) -> VideoAttachment:
-        """One-call helper: request URL, upload bytes, return VideoAttachment."""
+        """One-call helper: request URL, upload bytes, return VideoAttachment.
+
+        content_type defaults to None — the upload host infers from bytes.
+        Pass explicitly (e.g. "video/webm") if the host requires it.
+        """
         endpoint = await self.request_upload_url(type="video")
         result = await self.upload_file(
-            endpoint.url, content, filename=filename, content_type="video/mp4"
+            endpoint.url, content, filename=filename, content_type=content_type
         )
         return VideoAttachment.model_validate({"payload": {"token": result.token}})
 
@@ -280,11 +290,16 @@ class MaxClient:
         content: bytes | BinaryIO,
         *,
         filename: str | None = None,
+        content_type: str | None = None,
     ) -> AudioAttachment:
-        """One-call helper: request URL, upload bytes, return AudioAttachment."""
+        """One-call helper: request URL, upload bytes, return AudioAttachment.
+
+        content_type defaults to None — the upload host infers from bytes.
+        Pass explicitly (e.g. "audio/ogg") if the host requires it.
+        """
         endpoint = await self.request_upload_url(type="audio")
         result = await self.upload_file(
-            endpoint.url, content, filename=filename, content_type="audio/mpeg"
+            endpoint.url, content, filename=filename, content_type=content_type
         )
         return AudioAttachment.model_validate({"payload": {"token": result.token}})
 
