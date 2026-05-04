@@ -10,7 +10,7 @@ All API methods live here. Each method:
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import BinaryIO, Literal
 
 import httpx
 
@@ -23,6 +23,7 @@ from max_bot_api.models.messages import (
     TextFormat,
 )
 from max_bot_api.models.updates import UpdateList, UpdateType
+from max_bot_api.models.uploads import UploadEndpoint, UploadResult
 from max_bot_api.transport import Transport
 
 _TEXT_MAX = 4000
@@ -200,6 +201,47 @@ class MaxClient:
         return await self._transport.request(
             "GET", f"/chats/{chat_id}", response_model=Chat
         )
+
+    # ── Uploads ─────────────────────────────────────────────────────────
+
+    async def request_upload_url(
+        self,
+        *,
+        type: Literal["image", "video", "audio", "file"],
+    ) -> UploadEndpoint:
+        """Step 1 of attachment upload: ask the API where to send the file."""
+        return await self._transport.request(
+            "POST",
+            "/uploads",
+            params={"type": type},
+            response_model=UploadEndpoint,
+        )
+
+    async def upload_file(
+        self,
+        upload_url: str,
+        content: bytes | BinaryIO,
+        *,
+        filename: str | None = None,
+        content_type: str | None = None,
+    ) -> UploadResult:
+        """Step 2 of attachment upload: POST the bytes to the URL from step 1.
+
+        The upload URL is on a different host (the upload service, not the
+        API), so we use a fresh httpx call rather than going through the
+        bound transport.
+        """
+        files = {
+            "file": (
+                filename or "file",
+                content,
+                content_type or "application/octet-stream",
+            )
+        }
+        async with httpx.AsyncClient(timeout=300.0) as upload_client:
+            response = await upload_client.post(upload_url, files=files)
+            response.raise_for_status()
+            return UploadResult.model_validate(response.json())
 
     # ── Internal helpers ────────────────────────────────────────────────
 

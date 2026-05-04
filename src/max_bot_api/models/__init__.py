@@ -47,6 +47,7 @@ from max_bot_api.models.updates import (
     UpdateList,
     UpdateType,
 )
+from max_bot_api.models.uploads import UploadEndpoint, UploadResult
 
 __all__ = [
     "Attachment",
@@ -80,6 +81,8 @@ __all__ = [
     "RequestContactButton",
     "RequestGeoLocationButton",
     "TextFormat",
+    "UploadEndpoint",
+    "UploadResult",
     "Update",
     "UpdateList",
     "UpdateType",
