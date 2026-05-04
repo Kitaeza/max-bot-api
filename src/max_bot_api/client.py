@@ -30,6 +30,7 @@ from max_bot_api.models.messages import (
 )
 from max_bot_api.models.updates import UpdateList, UpdateType
 from max_bot_api.models.uploads import UploadEndpoint, UploadResult
+from max_bot_api.retry import RetryPolicy
 from max_bot_api.transport import Transport
 
 _TEXT_MAX = 4000
@@ -43,6 +44,8 @@ class MaxClient:
         base_url: API base URL. Override only for testing or proxy setups.
         timeout: Per-request timeout in seconds.
         transport: Custom httpx transport (mostly for tests).
+        retry: Optional RetryPolicy. None (default) means no retries —
+            single attempt per call, identical to v0.1.
     """
 
     def __init__(
@@ -52,9 +55,14 @@ class MaxClient:
         base_url: str = "https://platform-api.max.ru",
         timeout: float = 30.0,
         transport: httpx.AsyncBaseTransport | None = None,
+        retry: RetryPolicy | None = None,
     ) -> None:
         self._transport = Transport(
-            token=token, base_url=base_url, timeout=timeout, transport=transport
+            token=token,
+            base_url=base_url,
+            timeout=timeout,
+            transport=transport,
+            retry=retry,
         )
 
     async def __aenter__(self) -> MaxClient:
@@ -109,6 +117,7 @@ class MaxClient:
             "/messages",
             params=params,
             json=body.model_dump(exclude_none=True, by_alias=True),
+            idempotent=False,
             response_model=Message,
         )
 
@@ -139,12 +148,18 @@ class MaxClient:
             "/messages",
             params={"message_id": message_id},
             json=body.model_dump(exclude_none=True, by_alias=True),
+            idempotent=False,
             response_model=Message,
         )
 
     async def delete_message(self, message_id: str) -> None:
         """Delete a message by its mid."""
-        await self._transport.request("DELETE", "/messages", params={"message_id": message_id})
+        await self._transport.request(
+            "DELETE",
+            "/messages",
+            params={"message_id": message_id},
+            idempotent=False,
+        )
 
     async def get_messages(
         self,
@@ -165,7 +180,7 @@ class MaxClient:
         if message_ids:
             params["message_ids"] = ",".join(message_ids)
 
-        result = await self._transport.request("GET", "/messages", params=params)
+        result = await self._transport.request("GET", "/messages", params=params, idempotent=True)
         return [Message.model_validate(m) for m in result.get("messages", [])]
 
     # ── Updates ─────────────────────────────────────────────────────────
@@ -195,14 +210,16 @@ class MaxClient:
             params["types"] = [t.value for t in types]
 
         return await self._transport.request(
-            "GET", "/updates", params=params, response_model=UpdateList
+            "GET", "/updates", params=params, idempotent=True, response_model=UpdateList
         )
 
     # ── Chats ───────────────────────────────────────────────────────────
 
     async def get_chat(self, chat_id: int) -> Chat:
         """Fetch metadata for a single chat by ID."""
-        return await self._transport.request("GET", f"/chats/{chat_id}", response_model=Chat)
+        return await self._transport.request(
+            "GET", f"/chats/{chat_id}", idempotent=True, response_model=Chat
+        )
 
     # ── Uploads ─────────────────────────────────────────────────────────
 
@@ -216,6 +233,7 @@ class MaxClient:
             "POST",
             "/uploads",
             params={"type": type},
+            idempotent=True,
             response_model=UploadEndpoint,
         )
 
