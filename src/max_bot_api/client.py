@@ -14,6 +14,8 @@ from typing import BinaryIO, Literal
 
 import httpx
 
+from max_bot_api.exceptions import MaxBadResponseError
+from max_bot_api.models._internal import _SimpleResponse
 from max_bot_api.models.attachments import (
     Attachment,
     AudioAttachment,
@@ -29,6 +31,7 @@ from max_bot_api.models.messages import (
     NewMessageLink,
     TextFormat,
 )
+from max_bot_api.models.subscriptions import Subscription
 from max_bot_api.models.updates import UpdateList, UpdateType
 from max_bot_api.models.uploads import UploadEndpoint, UploadResult
 from max_bot_api.retry import RetryPolicy
@@ -395,6 +398,57 @@ class MaxClient:
         )
         return FileAttachment.model_validate({"payload": {"token": result.token}})
 
+    # ── Webhook subscriptions ───────────────────────────────────────────
+
+    async def get_subscriptions(self) -> list[Subscription]:
+        """List all active webhook subscriptions for this bot."""
+        result = await self._transport.request("GET", "/subscriptions", idempotent=True)
+        return [Subscription.model_validate(s) for s in result.get("subscriptions", [])]
+
+    async def subscribe(
+        self,
+        *,
+        url: str,
+        update_types: list[UpdateType] | None = None,
+        secret: str | None = None,
+    ) -> None:
+        """Register a webhook URL to receive bot events.
+
+        While a subscription is active, long-polling via get_updates()
+        is disabled. The URL must be HTTPS; the API will reject http://.
+        """
+        self._validate_webhook_url(url)
+        if secret is not None:
+            self._validate_webhook_secret(secret)
+
+        body: dict[str, object] = {"url": url}
+        if update_types is not None:
+            body["update_types"] = [t.value for t in update_types]
+        if secret is not None:
+            body["secret"] = secret
+
+        result = await self._transport.request(
+            "POST",
+            "/subscriptions",
+            json=body,
+            idempotent=False,
+            response_model=_SimpleResponse,
+        )
+        if not result.success:
+            raise MaxBadResponseError(result.message)
+
+    async def unsubscribe(self, *, url: str) -> None:
+        """Remove a webhook subscription by URL."""
+        result = await self._transport.request(
+            "DELETE",
+            "/subscriptions",
+            params={"url": url},
+            idempotent=False,
+            response_model=_SimpleResponse,
+        )
+        if not result.success:
+            raise MaxBadResponseError(result.message)
+
     # ── Internal helpers ────────────────────────────────────────────────
 
     @staticmethod
@@ -408,3 +462,15 @@ class MaxClient:
     def _require_content(text: str | None, attachments: list[Attachment] | None) -> None:
         if not text and not attachments:
             raise ValueError("must provide text or attachments")
+
+    @staticmethod
+    def _validate_webhook_url(url: str) -> None:
+        if not url.startswith("https://"):
+            raise ValueError("webhook url must start with https://")
+
+    @staticmethod
+    def _validate_webhook_secret(secret: str) -> None:
+        if not 5 <= len(secret) <= 256:
+            raise ValueError("webhook secret length must be between 5 and 256 characters")
+        if not all(c.isalnum() or c == "-" for c in secret):
+            raise ValueError("webhook secret may only contain A-Z, a-z, 0-9, and hyphen")
