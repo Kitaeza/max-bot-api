@@ -24,7 +24,7 @@ from max_bot_api.models.attachments import (
     VideoAttachment,
 )
 from max_bot_api.models.bot import BotInfo
-from max_bot_api.models.chats import Chat, ChatMember, ChatMemberList
+from max_bot_api.models.chats import Chat, ChatAction, ChatMember, ChatMemberList
 from max_bot_api.models.messages import (
     Message,
     NewMessageBody,
@@ -443,6 +443,20 @@ class MaxClient:
             "DELETE",
             "/subscriptions",
             params={"url": url},
+            idempotent=False,
+            response_model=_SimpleResponse,
+        )
+        if not result.success:
+            raise MaxBadResponseError(result.message)
+
+    # ── Action indicators ───────────────────────────────────────────────
+
+    async def send_action(self, chat_id: int, action: ChatAction) -> None:
+        """Send an activity indicator (typing, sending photo, ...) to a chat."""
+        result = await self._transport.request(
+            "POST",
+            f"/chats/{chat_id}/actions",
+            json={"action": action.value},
             idempotent=False,
             response_model=_SimpleResponse,
         )
