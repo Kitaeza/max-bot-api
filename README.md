@@ -6,7 +6,7 @@
 
 Async Python client for the [Max messenger Bot API](https://dev.max.ru/docs-api).
 
-A thin, stable, Pydantic-modeled wrapper. No bot framework, no FSM, no middleware — just the API surface you need to send messages, upload attachments, and poll for updates.
+A thin, stable, Pydantic-modeled wrapper. No bot framework, no FSM, no middleware — just the typed API surface for messaging, uploads, updates, webhooks, and chat introspection.
 
 ## Install
 
@@ -55,6 +55,78 @@ asyncio.run(main())
 | Action indicators (typing, sending photo, …) | ✅ |
 | Bot framework (handlers, FSM) | ❌ out of scope |
 
+## Polling for updates
+
+Long-poll the API and walk the marker cursor:
+
+```python
+import asyncio
+from max_bot_api import MaxClient
+
+async def main():
+    async with MaxClient(token="YOUR_BOT_TOKEN") as client:
+        marker: int | None = None
+        while True:
+            page = await client.get_updates(marker=marker, timeout=30)
+            for update in page.updates:
+                # `update` is a discriminated-union Pydantic model — check
+                # `update.update_type` or use isinstance on the subtypes.
+                print(update)
+            marker = page.marker
+
+asyncio.run(main())
+```
+
+`get_updates(timeout=30)` blocks server-side for up to 30 seconds waiting for new events; pass the returned `marker` back on the next call to advance the cursor. While a webhook subscription is active, this method is disabled — pick one transport, not both.
+
+## Introspection
+
+```python
+from max_bot_api import MaxClient
+
+async with MaxClient(token) as client:
+    # Who am I?
+    me = await client.get_me()
+    print(me.user_id, me.username, me.first_name)
+
+    # Walk a paginated member list
+    page = await client.get_chat_members(chat_id=42, count=50)
+    while True:
+        for member in page.members:
+            print(member.user_id, member.first_name)
+        if page.marker is None:
+            break
+        page = await client.get_chat_members(chat_id=42, marker=page.marker, count=50)
+
+    # Filter mode — fetch only specific users (overrides marker/count server-side)
+    page = await client.get_chat_members(chat_id=42, user_ids=[100, 200])
+
+    # Admins (bot must itself be an admin in the chat)
+    admins = await client.get_chat_admins(chat_id=42)
+    for admin in admins.members:
+        print(admin.user_id, admin.permissions)
+
+    # "Am I admin here?" preflight before doing admin-only operations
+    self_membership = await client.get_my_chat_membership(42)
+    if self_membership.is_admin:
+        ...
+```
+
+## Action indicators
+
+Send a typing or sending-photo indicator while you do work:
+
+```python
+from max_bot_api import MaxClient, ChatAction
+
+async with MaxClient(token) as client:
+    await client.send_action(42, ChatAction.TYPING_ON)
+    reply = await compute_expensive_reply(...)
+    await client.send_message(chat_id=42, text=reply)
+```
+
+Available actions: `TYPING_ON`, `SENDING_PHOTO`, `SENDING_VIDEO`, `SENDING_AUDIO`, `SENDING_FILE`.
+
 ## Errors
 
 ```python
@@ -77,6 +149,8 @@ async with MaxClient(token=...) as client:
         # Network problem; retry your way
         ...
 ```
+
+`subscribe`, `unsubscribe`, and `send_action` can also raise **`MaxBadResponseError`** — the API returned 2xx but with `{"success": false, "message": "..."}` in the body. It inherits from `MaxError` (not `MaxAPIError`, since the HTTP call itself succeeded), and `.message` carries the server's explanation.
 
 ## Retries
 
