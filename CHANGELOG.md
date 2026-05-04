@@ -27,5 +27,5 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Full type coverage with `py.typed` marker.
 - MIT license, hatchling build, ruff + mypy --strict in CI.
 
-[Unreleased]: https://github.com/Kitaeza/max-bot-api/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/Kitaeza/max-bot-api/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Kitaeza/python-max-bot/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Kitaeza/python-max-bot/releases/tag/v0.1.0

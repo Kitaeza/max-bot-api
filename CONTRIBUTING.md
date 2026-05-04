@@ -1,4 +1,4 @@
-# Contributing to max-bot-api
+# Contributing to python-max-bot
 
 Thanks for your interest! This guide covers the dev loop for both human
 and Claude-assisted contributors.
@@ -6,8 +6,8 @@ and Claude-assisted contributors.
 ## Setup
 
 ```bash
-git clone https://github.com/Kitaeza/max-bot-api
-cd max-bot-api
+git clone https://github.com/Kitaeza/python-max-bot
+cd python-max-bot
 uv sync
 ```
 

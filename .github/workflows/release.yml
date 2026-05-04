@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/max-bot-api
+      url: https://pypi.org/p/python-max-bot
     steps:
       - uses: actions/checkout@v4
 

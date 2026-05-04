@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a problem with max-bot-api
+about: Report a problem with python-max-bot
 title: '[BUG] '
 labels: bug
 assignees: ''
@@ -20,7 +20,7 @@ assignees: ''
 ```
 
 ## Environment
-- max-bot-api version:
+- python-max-bot version:
 - Python version:
 - httpx version:
 - pydantic version:

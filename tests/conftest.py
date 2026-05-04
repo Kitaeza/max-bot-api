@@ -1,1 +1,1 @@
-"""Shared pytest fixtures for the max-bot-api test suite."""
+"""Shared pytest fixtures for the python-max-bot test suite."""

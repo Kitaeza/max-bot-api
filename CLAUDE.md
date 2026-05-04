@@ -1,9 +1,9 @@
-# max-bot-api — guidance for Claude
+# python-max-bot — guidance for Claude
 
 ## What this is
 
 Async Python client for the Max messenger Bot API. Pydantic v2 models,
-httpx transport, MIT license. Ships to PyPI as `max-bot-api`.
+httpx transport, MIT license. Ships to PyPI as `python-max-bot`.
 
 Spec: `docs/design/0001-v0.1.md` is the source of truth for what's in
 scope. Plan: `docs/plans/0001-v0.1-implementation.md`.

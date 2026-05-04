@@ -1,7 +1,7 @@
-# max-bot-api
+# python-max-bot
 
-[![PyPI](https://img.shields.io/pypi/v/max-bot-api.svg)](https://pypi.org/project/max-bot-api/)
-[![Python](https://img.shields.io/pypi/pyversions/max-bot-api.svg)](https://pypi.org/project/max-bot-api/)
+[![PyPI](https://img.shields.io/pypi/v/python-max-bot.svg)](https://pypi.org/project/python-max-bot/)
+[![Python](https://img.shields.io/pypi/pyversions/python-max-bot.svg)](https://pypi.org/project/python-max-bot/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Async Python client for the [Max messenger Bot API](https://dev.max.ru/docs-api).
@@ -11,7 +11,7 @@ A thin, stable, Pydantic-modeled wrapper. No bot framework, no FSM, no middlewar
 ## Install
 
 ```bash
-pip install max-bot-api
+pip install python-max-bot
 ```
 
 ## Quickstart

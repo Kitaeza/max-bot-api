@@ -1,4 +1,4 @@
-"""Exception hierarchy for max-bot-api.
+"""Exception hierarchy for python-max-bot.
 
 All exceptions raised by the library inherit from MaxError. API errors
 (any non-2xx response) inherit from MaxAPIError. Network-level failures
@@ -11,7 +11,7 @@ import httpx
 
 
 class MaxError(Exception):
-    """Base class for everything raised by max-bot-api."""
+    """Base class for everything raised by python-max-bot."""
 
 
 class MaxAPIError(MaxError):
