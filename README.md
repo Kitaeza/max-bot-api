@@ -38,7 +38,7 @@ async def main():
 asyncio.run(main())
 ```
 
-## What's in v0.1
+## Features
 
 | Feature | Status |
 |---|---|
@@ -50,7 +50,9 @@ asyncio.run(main())
 | HTML and Markdown formatting | ✅ |
 | Typed exceptions per HTTP status | ✅ |
 | Auto-retry / backoff | ✅ |
-| Webhook subscription endpoints | ⏳ v0.3+ |
+| Bot introspection (`get_me`, members, admins) | ✅ |
+| Webhook subscription endpoints | ✅ |
+| Action indicators (typing, sending photo, …) | ✅ |
 | Bot framework (handlers, FSM) | ❌ out of scope |
 
 ## Errors
@@ -95,6 +97,29 @@ Read methods (`get_messages`, `get_updates`, `get_chat`, `request_upload_url`) r
 429 responses always retry. The library waits at least as long as the server's `Retry-After` header asks; `backoff_max` does **not** clamp the server's instruction.
 
 Without `retry=`, behavior is identical to v0.1 — one attempt per call.
+
+## Webhooks
+
+Register and manage webhook subscriptions (the receiver server is yours to run):
+
+```python
+from max_bot_api import MaxClient, UpdateType
+
+async with MaxClient(token) as client:
+    await client.subscribe(
+        url="https://my.server/max-webhook",
+        update_types=[UpdateType.MESSAGE_CREATED],
+        secret="my-shared-secret-12345",
+    )
+
+    subs = await client.get_subscriptions()
+    for s in subs:
+        print(s.url, s.update_types)
+
+    await client.unsubscribe(url="https://my.server/max-webhook")
+```
+
+The URL must be HTTPS — `subscribe()` raises `ValueError` on `http://` locally before any network call. While a subscription is active, long-polling via `get_updates()` is disabled.
 
 ## Built with Claude
 

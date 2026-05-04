@@ -6,8 +6,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-04
+
 ### Added
-- (Nothing yet — v0.3 work begins here.)
+- **Bot introspection:** `get_me()` returns a `BotInfo`;
+  `get_chat_members(chat_id)` and `get_chat_admins(chat_id)` return a
+  paginated `ChatMemberList`; `get_my_chat_membership(chat_id)` returns
+  a single `ChatMember` (useful for "am I admin here?" preflight).
+- **Webhook subscriptions:** `subscribe(url, update_types?, secret?)`,
+  `get_subscriptions()`, `unsubscribe(url)`. URL is locally validated
+  to start with `https://`; secret is validated for length (5..256)
+  and charset (`A-Za-z0-9-`). The library does not run a webhook
+  server — that's still out of scope.
+- **Action indicators:** `send_action(chat_id, ChatAction.TYPING_ON)`
+  and four other documented actions (`SENDING_PHOTO`, `SENDING_VIDEO`,
+  `SENDING_AUDIO`, `SENDING_FILE`).
+- New types re-exported from `max_bot_api`: `BotInfo`, `BotCommand`,
+  `ChatMember`, `ChatMemberList`, `ChatAdminPermission`, `ChatAction`,
+  `Subscription`.
+- New exception: `MaxBadResponseError` (inherits `MaxError`, not
+  `MaxAPIError`) — raised when the API returns 2xx with `{success:
+  false}` from the mutator endpoints (subscribe / unsubscribe /
+  send_action).
 
 ## [0.2.0] - 2026-05-04
 
@@ -46,6 +66,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Full type coverage with `py.typed` marker.
 - MIT license, hatchling build, ruff + mypy --strict in CI.
 
-[Unreleased]: https://github.com/Kitaeza/python-max-bot/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Kitaeza/python-max-bot/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Kitaeza/python-max-bot/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Kitaeza/python-max-bot/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Kitaeza/python-max-bot/releases/tag/v0.1.0
