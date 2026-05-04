@@ -40,6 +40,9 @@ scope. Plan: `docs/plans/0001-v0.1-implementation.md`.
   per call. The retry loop lives in `transport.py`; each `MaxClient`
   method tells the transport whether the call is `idempotent=` so writes
   don't double-apply on 5xx.
+- **Spec/plan paths.** Specs go in `docs/design/NNNN-<name>.md`,
+  plans in `docs/plans/NNNN-<name>-implementation.md`. Use these even
+  when a skill suggests a different default location.
 
 ## Testing
 
@@ -49,6 +52,9 @@ scope. Plan: `docs/plans/0001-v0.1-implementation.md`.
 - One test file per concern — match the source-file split.
 - Use `@respx.mock` decorator on async tests; the loop scope is
   `function` (per-test).
+- mypy strict needs explicit annotations on empty literals in test
+  fixtures: `payload: dict[str, object] = {"members": [], ...}`,
+  not `payload = {"members": [], ...}`.
 
 ## Common commands
 
@@ -60,7 +66,20 @@ uv run ruff check                 # lint
 uv run ruff format                # format
 uv run mypy src tests             # type-check
 uv build                          # build sdist + wheel
+uv run python -c "..."            # no system `python` — always go through uv
 ```
+
+## Releasing
+
+- Pushing a `v*` tag fires `release.yml` → builds + publishes to PyPI
+  via trusted publisher. Irreversible. Pause for explicit user consent
+  before pushing a release tag.
+- Smoke-install fresh: `uv pip install --no-cache --reinstall
+  python-max-bot` — uv aggressively caches recent wheels and will
+  silently pull the prior version.
+- PyPI's `/pypi/<pkg>/json` endpoint can lag 1–2 min behind the
+  release workflow (CDN). If it shows the old version, wait, don't
+  re-publish.
 
 ## Style
 
