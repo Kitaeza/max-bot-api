@@ -21,7 +21,8 @@ from max_bot_api.models.attachments import (
     ImageAttachment,
     VideoAttachment,
 )
-from max_bot_api.models.chats import Chat
+from max_bot_api.models.bot import BotInfo
+from max_bot_api.models.chats import Chat, ChatMember, ChatMemberList
 from max_bot_api.models.messages import (
     Message,
     NewMessageBody,
@@ -219,6 +220,66 @@ class MaxClient:
         """Fetch metadata for a single chat by ID."""
         return await self._transport.request(
             "GET", f"/chats/{chat_id}", idempotent=True, response_model=Chat
+        )
+
+    # ── Introspection ───────────────────────────────────────────────────
+
+    async def get_me(self) -> BotInfo:
+        """Fetch the authenticated bot's identity and metadata."""
+        return await self._transport.request("GET", "/me", idempotent=True, response_model=BotInfo)
+
+    async def get_chat_members(
+        self,
+        chat_id: int,
+        *,
+        user_ids: list[int] | None = None,
+        marker: int | None = None,
+        count: int = 20,
+    ) -> ChatMemberList:
+        """List members of a group chat.
+
+        When `user_ids` is provided, the API treats it as a filter and
+        ignores `marker`/`count`. Without it, results are paginated:
+        pass back the returned `marker` on the next call.
+        """
+        if not 1 <= count <= 100:
+            raise ValueError("count must be between 1 and 100")
+        params: dict[str, object] = {
+            "marker": marker,
+            "count": count,
+        }
+        if user_ids:
+            params["user_ids"] = ",".join(str(u) for u in user_ids)
+        return await self._transport.request(
+            "GET",
+            f"/chats/{chat_id}/members",
+            params=params,
+            idempotent=True,
+            response_model=ChatMemberList,
+        )
+
+    async def get_chat_admins(
+        self,
+        chat_id: int,
+        *,
+        marker: int | None = None,
+    ) -> ChatMemberList:
+        """List administrators of a group chat. Bot must itself be an admin."""
+        return await self._transport.request(
+            "GET",
+            f"/chats/{chat_id}/members/admins",
+            params={"marker": marker},
+            idempotent=True,
+            response_model=ChatMemberList,
+        )
+
+    async def get_my_chat_membership(self, chat_id: int) -> ChatMember:
+        """Fetch the bot's own membership in a chat (admin status, permissions)."""
+        return await self._transport.request(
+            "GET",
+            f"/chats/{chat_id}/members/me",
+            idempotent=True,
+            response_model=ChatMember,
         )
 
     # ── Uploads ─────────────────────────────────────────────────────────
