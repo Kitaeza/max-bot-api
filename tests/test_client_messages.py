@@ -20,6 +20,13 @@ def _msg_response(text: str = "hi") -> dict[str, object]:
     }
 
 
+def _send_envelope(text: str = "hi") -> dict[str, object]:
+    """The real Max API wraps POST /messages and PUT /messages responses
+    under a top-level `message` key. send_message / edit_message unwrap
+    it; tests that mock those endpoints must produce the envelope."""
+    return {"message": _msg_response(text)}
+
+
 @pytest.fixture
 async def client() -> AsyncGenerator[MaxClient, None]:
     c = MaxClient(token=_TOKEN, base_url=_BASE)
@@ -30,7 +37,7 @@ async def client() -> AsyncGenerator[MaxClient, None]:
 @respx.mock
 async def test_send_message_to_chat(client: MaxClient) -> None:
     route = respx.post(f"{_BASE}/messages", params={"chat_id": "42"}).mock(
-        return_value=httpx.Response(200, json=_msg_response())
+        return_value=httpx.Response(200, json=_send_envelope())
     )
     msg = await client.send_message(chat_id=42, text="hi")
     assert isinstance(msg, Message)
@@ -42,7 +49,7 @@ async def test_send_message_to_chat(client: MaxClient) -> None:
 @respx.mock
 async def test_send_message_to_user(client: MaxClient) -> None:
     route = respx.post(f"{_BASE}/messages", params={"user_id": "7"}).mock(
-        return_value=httpx.Response(200, json=_msg_response())
+        return_value=httpx.Response(200, json=_send_envelope())
     )
     await client.send_message(user_id=7, text="hi")
     assert route.called
@@ -51,7 +58,7 @@ async def test_send_message_to_user(client: MaxClient) -> None:
 @respx.mock
 async def test_send_message_with_format(client: MaxClient) -> None:
     route = respx.post(f"{_BASE}/messages", params={"chat_id": "42"}).mock(
-        return_value=httpx.Response(200, json=_msg_response("**hi**"))
+        return_value=httpx.Response(200, json=_send_envelope("**hi**"))
     )
     await client.send_message(chat_id=42, text="**hi**", format=TextFormat.MARKDOWN)
     body = route.calls.last.request.read()
@@ -63,7 +70,7 @@ async def test_send_message_disable_link_preview_goes_in_query(client: MaxClient
     route = respx.post(
         f"{_BASE}/messages",
         params={"chat_id": "42", "disable_link_preview": "true"},
-    ).mock(return_value=httpx.Response(200, json=_msg_response()))
+    ).mock(return_value=httpx.Response(200, json=_send_envelope()))
     await client.send_message(chat_id=42, text="hi", disable_link_preview=True)
     assert route.called
 
@@ -91,7 +98,7 @@ async def test_send_message_rejects_text_over_4000_chars(client: MaxClient) -> N
 @respx.mock
 async def test_edit_message(client: MaxClient) -> None:
     route = respx.put(f"{_BASE}/messages", params={"message_id": "m1"}).mock(
-        return_value=httpx.Response(200, json=_msg_response("edited"))
+        return_value=httpx.Response(200, json=_send_envelope("edited"))
     )
     msg = await client.edit_message("m1", text="edited")
     assert msg.body.text == "edited"
@@ -118,6 +125,21 @@ async def test_get_messages(client: MaxClient) -> None:
     assert msgs[0].body.text == "hi"
 
 
+@respx.mock
+async def test_send_message_unwraps_message_envelope(client: MaxClient) -> None:
+    """Regression: the Max API returns POST /messages as
+    `{"message": {sender, recipient, timestamp, body}}`. send_message must
+    unwrap the envelope and return the inner Message — early versions
+    parsed the outer dict directly and raised on missing fields."""
+    respx.post(f"{_BASE}/messages", params={"chat_id": "42"}).mock(
+        return_value=httpx.Response(200, json=_send_envelope("ok"))
+    )
+    msg = await client.send_message(chat_id=42, text="ok")
+    assert isinstance(msg, Message)
+    assert msg.body.text == "ok"
+    assert msg.body.mid == "m1"
+
+
 async def test_client_aclose(client: MaxClient) -> None:
     await client.aclose()  # idempotent — must not raise
 
@@ -132,7 +154,7 @@ async def test_edit_message_omits_notify_by_default(client: MaxClient) -> None:
     """edit_message(notify=None) must NOT send `notify` on the wire — the
     server keeps the original notify state for the edit."""
     route = respx.put(f"{_BASE}/messages", params={"message_id": "m1"}).mock(
-        return_value=httpx.Response(200, json=_msg_response("edited"))
+        return_value=httpx.Response(200, json=_send_envelope("edited"))
     )
     await client.edit_message("m1", text="edited")
     body = route.calls.last.request.read()
@@ -143,7 +165,7 @@ async def test_edit_message_omits_notify_by_default(client: MaxClient) -> None:
 async def test_edit_message_sends_notify_when_explicit(client: MaxClient) -> None:
     """When the caller explicitly sets notify, the value reaches the wire."""
     route = respx.put(f"{_BASE}/messages", params={"message_id": "m1"}).mock(
-        return_value=httpx.Response(200, json=_msg_response("edited"))
+        return_value=httpx.Response(200, json=_send_envelope("edited"))
     )
     await client.edit_message("m1", text="edited", notify=False)
     body = route.calls.last.request.read()
@@ -154,7 +176,7 @@ async def test_edit_message_sends_notify_when_explicit(client: MaxClient) -> Non
 async def test_send_message_default_notify_is_true(client: MaxClient) -> None:
     """send_message keeps its notify=True default — explicit on the wire."""
     respx.post(f"{_BASE}/messages", params={"chat_id": "42"}).mock(
-        return_value=httpx.Response(200, json=_msg_response())
+        return_value=httpx.Response(200, json=_send_envelope())
     )
     await client.send_message(chat_id=42, text="hi")
     # Already covered by the existing test_send_message_to_chat which asserts

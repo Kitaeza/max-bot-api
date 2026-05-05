@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
+from max_bot_api.models.messages import Message
+
 
 class _SimpleResponse(BaseModel):
     """Parses the `{success, message}` envelope returned by the mutator
@@ -18,3 +20,14 @@ class _SimpleResponse(BaseModel):
 
     success: bool
     message: str | None = None
+
+
+class _SendMessageResponse(BaseModel):
+    """Parses the `{message: Message}` envelope returned by POST /messages
+    and PUT /messages. The Max API wraps the message body in a top-level
+    `message` key; we unwrap and return the inner `Message` from
+    `send_message` / `edit_message`."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    message: Message

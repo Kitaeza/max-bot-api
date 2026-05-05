@@ -7,7 +7,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Added
-- (Nothing yet — v0.4 work begins here.)
+- (Nothing yet — v0.5 work begins here.)
+
+## [0.4.0] - 2026-05-05
+
+### Fixed
+- **`send_message` / `edit_message` no longer raise `ValidationError` on
+  successful API responses.** The Max API wraps `POST /messages` and
+  `PUT /messages` results under a top-level `message` key
+  (`{"message": {sender, recipient, timestamp, body}}`); v0.1–v0.3
+  parsed the outer dict directly as `Message` and raised on the
+  "missing" required fields. The library now unwraps the envelope
+  before parsing. Discovered when integrating against the live
+  `platform-api.max.ru` endpoint — mocks in earlier tests had encoded
+  the wrong shape, so the bug was invisible in CI.
 
 ## [0.3.0] - 2026-05-04
 

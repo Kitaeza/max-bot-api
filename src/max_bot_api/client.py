@@ -15,7 +15,7 @@ from typing import BinaryIO, Literal
 import httpx
 
 from max_bot_api.exceptions import MaxBadResponseError
-from max_bot_api.models._internal import _SimpleResponse
+from max_bot_api.models._internal import _SendMessageResponse, _SimpleResponse
 from max_bot_api.models.attachments import (
     Attachment,
     AudioAttachment,
@@ -116,14 +116,15 @@ class MaxClient:
             "user_id": user_id,
             "disable_link_preview": "true" if disable_link_preview else None,
         }
-        return await self._transport.request(
+        envelope = await self._transport.request(
             "POST",
             "/messages",
             params=params,
             json=body.model_dump(exclude_none=True, by_alias=True),
             idempotent=False,
-            response_model=Message,
+            response_model=_SendMessageResponse,
         )
+        return envelope.message
 
     async def edit_message(
         self,
@@ -147,14 +148,15 @@ class MaxClient:
             notify=notify,
             format=TextFormat(format) if isinstance(format, str) else format,
         )
-        return await self._transport.request(
+        envelope = await self._transport.request(
             "PUT",
             "/messages",
             params={"message_id": message_id},
             json=body.model_dump(exclude_none=True, by_alias=True),
             idempotent=False,
-            response_model=Message,
+            response_model=_SendMessageResponse,
         )
+        return envelope.message
 
     async def delete_message(self, message_id: str) -> None:
         """Delete a message by its mid."""
