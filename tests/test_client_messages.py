@@ -126,6 +126,30 @@ async def test_get_messages(client: MaxClient) -> None:
 
 
 @respx.mock
+async def test_send_message_accepts_response_without_sender(client: MaxClient) -> None:
+    """Regression: the live POST /messages response omits `sender` — the
+    bot is the implicit sender on its own writes. v0.4.0 modeled
+    `Message.sender` as required and raised ValidationError in
+    production. Sender is Optional now; reads (GET /messages, webhook
+    updates) still populate it."""
+    respx.post(f"{_BASE}/messages", params={"chat_id": "42"}).mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "message": {
+                    "recipient": {"chat_id": 42, "chat_type": "channel"},
+                    "timestamp": 1234567890,
+                    "body": {"mid": "m-real", "seq": 1, "text": "hi", "attachments": []},
+                }
+            },
+        )
+    )
+    msg = await client.send_message(chat_id=42, text="hi")
+    assert msg.body.mid == "m-real"
+    assert msg.sender is None
+
+
+@respx.mock
 async def test_send_message_unwraps_message_envelope(client: MaxClient) -> None:
     """Regression: the Max API returns POST /messages as
     `{"message": {sender, recipient, timestamp, body}}`. send_message must

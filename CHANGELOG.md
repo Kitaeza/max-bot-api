@@ -9,6 +9,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - (Nothing yet — v0.5 work begins here.)
 
+## [0.4.1] - 2026-05-05
+
+### Fixed
+- **`Message.sender` is now optional.** The live POST /messages and
+  PUT /messages responses omit `sender` — the bot is the implicit
+  sender on its own writes — so v0.4.0 still raised
+  `ValidationError` after the envelope unwrap. Read paths
+  (GET /messages, webhook updates) continue to populate it.
+
 ## [0.4.0] - 2026-05-05
 
 ### Fixed

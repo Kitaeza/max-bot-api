@@ -83,7 +83,12 @@ class Message(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    sender: MessageSender
+    # `sender` is omitted from POST /messages and PUT /messages responses
+    # — the API treats the bot itself as the implicit sender on its own
+    # writes and only fills the field on read paths (GET /messages,
+    # webhook updates). Modeling it Optional keeps the same Message
+    # type usable across all return sites.
+    sender: MessageSender | None = None
     recipient: MessageRecipient
     timestamp: int
     link: NewMessageLink | None = None
